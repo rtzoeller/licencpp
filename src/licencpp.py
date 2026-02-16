@@ -152,6 +152,16 @@ def generate_spdx_document(dependencies_info):
         yaml.dump(spdx_document, spdx_file,
                   sort_keys=False, default_flow_style=False)
 
+def get_version_from_dep_data(dep_data):
+    # The version can be stored under one of several keys
+    # https://learn.microsoft.com/en-us/vcpkg/users/versioning#version-schemes
+    keys = ['version', 'version-semver', 'version-date', 'version-string']
+    for key in keys:
+        version = dep_data.get(key)
+        if version is not None:
+            return version
+    return None
+
 def get_data_from_vcpkg_json(dep_name):
     if verbose:
         print(f"Analyzing {dep_name}")
@@ -166,14 +176,11 @@ def get_data_from_vcpkg_json(dep_name):
                 dep_data = json.load(file)
                 license = dep_data.get('license')
                 homepage = dep_data.get('homepage')
-                version = dep_data.get('version')
+                version = get_version_from_dep_data(dep_data)
                 description = dep_data.get('description')
                 # if description is a list of strings, we need to join them into a single string
                 if isinstance(description, list):
                     description = ' '.join(description)
-                # if version is missing, we try looking for the field "version-date"
-                if version is None:
-                    version = dep_data.get('version-date')
                 if verbose:
                     print(
                         f"Using {vcpkg_json_path} as a source for {dep_name} ({version}:{license})")
